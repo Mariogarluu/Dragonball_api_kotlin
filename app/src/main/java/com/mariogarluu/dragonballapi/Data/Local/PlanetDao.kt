@@ -1,7 +1,7 @@
-package com.mariogarluu.dragonballapi.Data.Local
+package com.mariogarluu.dragonballapi.data.local
 
 import androidx.room.*
-import com.mariogarluu.dragonballapi.Data.Local.entity.PlanetEntity
+import com.mariogarluu.dragonballapi.data.local.entity.PlanetEntity
 import kotlinx.coroutines.flow.Flow
 
 /**

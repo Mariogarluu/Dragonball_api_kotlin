@@ -3,8 +3,8 @@ package com.mariogarluu.dragonballapi.ui.detail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mariogarluu.dragonballapi.Data.Model.Character
-import com.mariogarluu.dragonballapi.Data.Repo.DragonBallRepository
+import com.mariogarluu.dragonballapi.data.model.Character
+import com.mariogarluu.dragonballapi.data.repo.DragonBallRepository
 import com.mariogarluu.dragonballapi.ui.CharacterDetailUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

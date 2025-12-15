@@ -1,9 +1,9 @@
-package com.mariogarluu.dragonballapi.Data.Remote
+package com.mariogarluu.dragonballapi.data.remote
 
-import com.mariogarluu.dragonballapi.Data.Model.Character
-import com.mariogarluu.dragonballapi.Data.Model.CharacterResponse
-import com.mariogarluu.dragonballapi.Data.Model.Planet
-import com.mariogarluu.dragonballapi.Data.Model.PlanetResponse
+import com.mariogarluu.dragonballapi.data.model.Character
+import com.mariogarluu.dragonballapi.data.model.CharacterResponse
+import com.mariogarluu.dragonballapi.data.model.Planet
+import com.mariogarluu.dragonballapi.data.model.PlanetResponse
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query

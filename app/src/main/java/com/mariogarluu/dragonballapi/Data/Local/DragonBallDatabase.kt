@@ -1,10 +1,10 @@
-package com.mariogarluu.dragonballapi.Data.Local
+package com.mariogarluu.dragonballapi.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import com.mariogarluu.dragonballapi.Data.Local.entity.CharacterEntity
-import com.mariogarluu.dragonballapi.Data.Local.entity.PlanetEntity
-import com.mariogarluu.dragonballapi.Data.Local.entity.TransformationEntity
+import com.mariogarluu.dragonballapi.data.local.entity.CharacterEntity
+import com.mariogarluu.dragonballapi.data.local.entity.PlanetEntity
+import com.mariogarluu.dragonballapi.data.local.entity.TransformationEntity
 
 /**
  * The Room database for this app.

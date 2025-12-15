@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.mariogarluu.dragonballapi.Data.Model.Planet
+import com.mariogarluu.dragonballapi.data.model.Planet
 import com.mariogarluu.dragonballapi.ui.PlanetsUiState
 import com.mariogarluu.dragonballapi.ui.common.AppTopBar
 

@@ -1,6 +1,6 @@
 package com.mariogarluu.dragonballapi.di
 
-import com.mariogarluu.dragonballapi.Data.Remote.DragonBallApi
+import com.mariogarluu.dragonballapi.data.remote.DragonBallApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

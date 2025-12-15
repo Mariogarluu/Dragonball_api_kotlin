@@ -1,4 +1,4 @@
-package com.mariogarluu.dragonballapi.Data.Local.entity
+package com.mariogarluu.dragonballapi.data.local.entity
 
 import androidx.room.Embedded
 import androidx.room.Relation

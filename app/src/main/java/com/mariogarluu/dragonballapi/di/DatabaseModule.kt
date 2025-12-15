@@ -2,9 +2,9 @@ package com.mariogarluu.dragonballapi.di
 
 import android.content.Context
 import androidx.room.Room
-import com.mariogarluu.dragonballapi.Data.Local.CharacterDao
-import com.mariogarluu.dragonballapi.Data.Local.DragonBallDatabase
-import com.mariogarluu.dragonballapi.Data.Local.PlanetDao
+import com.mariogarluu.dragonballapi.data.local.CharacterDao
+import com.mariogarluu.dragonballapi.data.local.DragonBallDatabase
+import com.mariogarluu.dragonballapi.data.local.PlanetDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,8 +24,8 @@ object DatabaseModule {
             DragonBallDatabase::class.java,
             "dragonball_database"
         )
-        .fallbackToDestructiveMigration() // Importante para evitar crashes si cambias versiones
-        .build()
+            .fallbackToDestructiveMigration()
+            .build()
     }
 
     @Provides

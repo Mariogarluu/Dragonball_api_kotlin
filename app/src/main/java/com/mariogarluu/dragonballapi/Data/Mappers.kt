@@ -1,7 +1,7 @@
-package com.mariogarluu.dragonballapi.Data
+package com.mariogarluu.dragonballapi.data
 
-import com.mariogarluu.dragonballapi.Data.Local.entity.*
-import com.mariogarluu.dragonballapi.Data.Model.*
+import com.mariogarluu.dragonballapi.data.local.entity.*
+import com.mariogarluu.dragonballapi.data.model.*
 
 fun CharacterWithRelations.toDomain(): Character = Character(
     id = character.id, name = character.name, ki = character.ki, maxKi = character.maxKi,

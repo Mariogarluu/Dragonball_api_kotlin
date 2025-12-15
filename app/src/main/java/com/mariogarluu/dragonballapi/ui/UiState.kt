@@ -1,7 +1,7 @@
 package com.mariogarluu.dragonballapi.ui
 
-import com.mariogarluu.dragonballapi.Data.Model.Character
-import com.mariogarluu.dragonballapi.Data.Model.Planet
+import com.mariogarluu.dragonballapi.data.model.Character
+import com.mariogarluu.dragonballapi.data.model.Planet
 
 // --- LISTAS ---
 

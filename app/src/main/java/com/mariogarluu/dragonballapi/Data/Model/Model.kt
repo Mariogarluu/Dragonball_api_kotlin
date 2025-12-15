@@ -1,4 +1,4 @@
-package com.mariogarluu.dragonballapi.Data.Model
+package com.mariogarluu.dragonballapi.data.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
