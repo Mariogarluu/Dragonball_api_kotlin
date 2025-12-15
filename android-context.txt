@@ -1,0 +1,3012 @@
+--- START OF FILE: app\build.gradle.kts ---
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
+    id("com.google.devtools.ksp")
+    id("com.google.dagger.hilt.android")
+}
+
+android {
+    namespace = "com.mariogarluu.dragonballapi"
+    compileSdk = 34
+
+    defaultConfig {
+        applicationId = "com.mariogarluu.dragonballapi"
+        minSdk = 26
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables {
+            useSupportLibrary = true
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+    buildFeatures {
+        compose = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.1" // Ignorado por Kotlin 2.0 pero se deja por compatibilidad
+    }
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+}
+
+dependencies {
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
+    implementation("androidx.activity:activity-compose:1.9.1")
+    implementation(platform("androidx.compose:compose-bom:2024.06.00"))
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.ui:ui-graphics")
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended")
+
+    // Room (Usando KSP)
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    ksp("androidx.room:room-compiler:2.6.1")
+
+    // Hilt (Usando KSP)
+    implementation("com.google.dagger:hilt-android:2.51.1")
+    ksp("com.google.dagger:hilt-android-compiler:2.51.1")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+
+    // Retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // Coil
+    implementation("io.coil-kt:coil-compose:2.7.0")
+
+    // ViewModel & Navigation
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
+    implementation("androidx.navigation:navigation-compose:2.8.0-beta05")
+
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    androidTestImplementation(platform("androidx.compose:compose-bom:2024.06.00"))
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    debugImplementation("androidx.compose.ui:ui-tooling")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
+}
+--- END OF FILE: app\build.gradle.kts ---
+
+--- START OF FILE: app\src\androidTest\java\com\mariogarluu\dragonballapi\ExampleInstrumentedTest.kt ---
+package com.mariogarluu.dragonballapi
+
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.ext.junit.runners.AndroidJUnit4
+
+import org.junit.Test
+import org.junit.runner.RunWith
+
+import org.junit.Assert.*
+
+/**
+ * Instrumented test, which will execute on an Android device.
+ *
+ * See [testing documentation](http://d.android.com/tools/testing).
+ */
+@RunWith(AndroidJUnit4::class)
+class ExampleInstrumentedTest {
+    @Test
+    fun useAppContext() {
+        // Context of the app under test.
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+        assertEquals("com.mariogarluu.dragonballapi", appContext.packageName)
+    }
+}
+--- END OF FILE: app\src\androidTest\java\com\mariogarluu\dragonballapi\ExampleInstrumentedTest.kt ---
+
+--- START OF FILE: app\src\main\AndroidManifest.xml ---
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:name=".DragonBallApiApp"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Dragonballapi"
+        android:enableOnBackInvokedCallback="true"
+        tools:targetApi="31">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.Dragonballapi">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
+--- END OF FILE: app\src\main\AndroidManifest.xml ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\Data\Local\CharacterDao.kt ---
+package com.mariogarluu.dragonballapi.data.local
+
+import androidx.room.*
+import com.mariogarluu.dragonballapi.data.local.entity.*
+import kotlinx.coroutines.flow.Flow
+
+/**
+ * Data Access Object for the character table.
+ */
+@Dao
+interface CharacterDao {
+    /**
+     * Inserts a list of characters into the database.
+     *
+     * @param characters The list of characters to insert.
+     */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCharacters(characters: List<CharacterEntity>)
+
+    /**
+     * Inserts a single character into the database.
+     *
+     * @param character The character to insert.
+     */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCharacter(character: CharacterEntity)
+
+    /**
+     * Inserts a list of transformations into the database.
+     *
+     * @param transformations The list of transformations to insert.
+     */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTransformations(transformations: List<TransformationEntity>)
+
+    /**
+     * Gets a flow of all characters with their relations from the database.
+     *
+     * @return A flow of a list of [CharacterWithRelations].
+     */
+    @Transaction
+    @Query("SELECT * FROM characters")
+    fun getAllCharactersWithRelations(): Flow<List<CharacterWithRelations>>
+
+    /**
+     * Gets a flow of a single character with its relations by its ID from the database.
+     *
+     * @param id The ID of the character to get.
+     * @return A flow of a [CharacterWithRelations] or null if not found.
+     */
+    @Transaction
+    @Query("SELECT * FROM characters WHERE id = :id")
+    fun getCharacterWithRelationsById(id: Int): Flow<CharacterWithRelations?>
+
+    /**
+     * Deletes a character by its ID from the database.
+     *
+     * @param id The ID of the character to delete.
+     */
+    @Query("DELETE FROM characters WHERE id = :id")
+    suspend fun deleteCharacterById(id: Int)
+
+    /**
+     * Updates the favorite status of a character.
+     *
+     * @param id The ID of the character to update.
+     * @param isFavorite The new favorite status.
+     */
+    @Query("UPDATE characters SET isFavorite = :isFavorite WHERE id = :id")
+    suspend fun updateFavoriteStatus(id: Int, isFavorite: Boolean)
+}
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\Data\Local\CharacterDao.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\Data\Local\DragonBallDatabase.kt ---
+package com.mariogarluu.dragonballapi.data.local
+
+import androidx.room.Database
+import androidx.room.RoomDatabase
+import com.mariogarluu.dragonballapi.data.local.entity.CharacterEntity
+import com.mariogarluu.dragonballapi.data.local.entity.PlanetEntity
+import com.mariogarluu.dragonballapi.data.local.entity.TransformationEntity
+
+/**
+ * The Room database for this app.
+ */
+@Database(
+    entities = [CharacterEntity::class, PlanetEntity::class, TransformationEntity::class],
+    version = 5,
+    exportSchema = false
+)
+abstract class DragonBallDatabase : RoomDatabase() {
+    /**
+     * Returns the Data Access Object for the character table.
+     *
+     * @return The DAO for the character table.
+     */
+    abstract fun characterDao(): CharacterDao
+
+    /**
+     * Returns the Data Access Object for the planet table.
+     *
+     * @return The DAO for the planet table.
+     */
+    abstract fun planetDao(): PlanetDao
+}
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\Data\Local\DragonBallDatabase.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\Data\Local\entity\CharacterEntity.kt ---
+package com.mariogarluu.dragonballapi.data.local.entity
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+/**
+ * Represents a character in the database.
+ *
+ * @property id The unique ID of the character.
+ * @property name The name of the character.
+ * @property ki The ki of the character.
+ * @property maxKi The maximum ki of the character.
+ * @property race The race of the character.
+ * @property gender The gender of the character.
+ * @property description A description of the character.
+ * @property image The URL of the character's image.
+ * @property affiliation The affiliation of the character.
+ * @property originPlanetId The ID of the character's planet of origin.
+ * @property isFavorite Whether the character is a favorite.
+ */
+@Entity(tableName = "characters")
+data class CharacterEntity(
+    @PrimaryKey val id: Int,
+    val name: String,
+    val ki: String,
+    val maxKi: String,
+    val race: String,
+    val gender: String,
+    val description: String,
+    val image: String,
+    val affiliation: String,
+    val originPlanetId: Int?,
+    val isFavorite: Boolean = false
+)
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\Data\Local\entity\CharacterEntity.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\Data\Local\entity\CharacterWithRelations.kt ---
+package com.mariogarluu.dragonballapi.data.local.entity
+
+import androidx.room.Embedded
+import androidx.room.Relation
+
+/**
+ * Represents a character with its relations (planet and transformations).
+ * This is used to query the database for a character and all its related data.
+ *
+ * @property character The character entity.
+ * @property planet The character's planet of origin.
+ * @property transformations A list of the character's transformations.
+ */
+data class CharacterWithRelations(
+    @Embedded val character: CharacterEntity,
+    @Relation(parentColumn = "originPlanetId", entityColumn = "id")
+    val planet: PlanetEntity?,
+    @Relation(parentColumn = "id", entityColumn = "characterId")
+    val transformations: List<TransformationEntity>
+)
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\Data\Local\entity\CharacterWithRelations.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\Data\Local\entity\PlanetEntity.kt ---
+package com.mariogarluu.dragonballapi.data.local.entity
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+/**
+ * Represents a planet in the database.
+ *
+ * @property id The unique ID of the planet.
+ * @property name The name of the planet.
+ * @property isDestroyed Whether the planet has been destroyed.
+ * @property description A description of the planet.
+ * @property image The URL of the planet's image.
+ * @property isFavorite Whether the planet is a favorite.
+ */
+@Entity(tableName = "planets")
+data class PlanetEntity(
+    @PrimaryKey val id: Int,
+    val name: String,
+    val isDestroyed: Boolean,
+    val description: String,
+    val image: String,
+    val isFavorite: Boolean = false
+)
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\Data\Local\entity\PlanetEntity.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\Data\Local\entity\TransformationEntity.kt ---
+package com.mariogarluu.dragonballapi.data.local.entity
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+/**
+ * Represents a transformation of a character in the database.
+ *
+ * @property id The unique ID of the transformation.
+ * @property name The name of the transformation.
+ * @property image The URL of the transformation's image.
+ * @property ki The ki of the transformation.
+ * @property characterId The ID of the character this transformation belongs to.
+ */
+@Entity(tableName = "transformations")
+data class TransformationEntity(
+    @PrimaryKey val id: Int,
+    val name: String,
+    val image: String,
+    val ki: String,
+    val characterId: Int
+)
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\Data\Local\entity\TransformationEntity.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\Data\Local\PlanetDao.kt ---
+package com.mariogarluu.dragonballapi.data.local
+
+import androidx.room.*
+import com.mariogarluu.dragonballapi.data.local.entity.PlanetEntity
+import kotlinx.coroutines.flow.Flow
+
+/**
+ * Data Access Object for the planet table.
+ */
+@Dao
+interface PlanetDao {
+    /**
+     * Inserts a list of planets into the database.
+     *
+     * @param planets The list of planets to insert.
+     */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(planets: List<PlanetEntity>)
+
+    /**
+     * Inserts a single planet into the database.
+     *
+     * @param planet The planet to insert.
+     */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPlanet(planet: PlanetEntity)
+
+    /**
+     * Gets a flow of all planets from the database.
+     *
+     * @return A flow of a list of [PlanetEntity].
+     */
+    @Query("SELECT * FROM planets")
+    fun getAllPlanets(): Flow<List<PlanetEntity>>
+
+    /**
+     * Gets a flow of a single planet by its ID from the database.
+     *
+     * @param id The ID of the planet to get.
+     * @return A flow of a [PlanetEntity] or null if not found.
+     */
+    @Query("SELECT * FROM planets WHERE id = :id")
+    fun getPlanetById(id: Int): Flow<PlanetEntity?>
+
+    /**
+     * Deletes a planet by its ID from the database.
+     *
+     * @param id The ID of the planet to delete.
+     */
+    @Query("DELETE FROM planets WHERE id = :id")
+    suspend fun deletePlanetById(id: Int)
+
+    /**
+     * Updates the favorite status of a planet.
+     *
+     * @param id The ID of the planet to update.
+     * @param isFavorite The new favorite status.
+     */
+    @Query("UPDATE planets SET isFavorite = :isFavorite WHERE id = :id")
+    suspend fun updateFavoriteStatus(id: Int, isFavorite: Boolean)
+}
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\Data\Local\PlanetDao.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\Data\Mappers.kt ---
+package com.mariogarluu.dragonballapi.data
+
+import com.mariogarluu.dragonballapi.data.local.entity.*
+import com.mariogarluu.dragonballapi.data.model.*
+
+fun CharacterWithRelations.toDomain(): Character = Character(
+    id = character.id, name = character.name, ki = character.ki, maxKi = character.maxKi,
+    race = character.race, gender = character.gender, description = character.description,
+    image = character.image, affiliation = character.affiliation,
+    originPlanet = planet?.toDomain(),
+    transformations = transformations.map { it.toDomain() },
+    isFavorite = character.isFavorite
+)
+
+fun PlanetEntity.toDomain(): Planet = Planet(
+    id = id, name = name, isDestroyed = isDestroyed, description = description, image = image, isFavorite = isFavorite
+)
+
+fun TransformationEntity.toDomain(): Transformation = Transformation(
+    id = id, name = name, image = image, ki = ki
+)
+
+fun Character.toEntity(): CharacterEntity = CharacterEntity(
+    id = id, name = name, ki = ki, maxKi = maxKi, race = race, gender = gender,
+    description = description, image = image, affiliation = affiliation,
+    originPlanetId = originPlanet?.id, isFavorite = isFavorite
+)
+
+fun Planet.toEntity(): PlanetEntity = PlanetEntity(
+    id = id, name = name, isDestroyed = isDestroyed, description = description, image = image, isFavorite = isFavorite
+)
+
+fun Transformation.toEntity(characterId: Int): TransformationEntity = TransformationEntity(
+    id = id, name = name, image = image, ki = ki, characterId = characterId
+)
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\Data\Mappers.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\Data\Model\Model.kt ---
+package com.mariogarluu.dragonballapi.data.model
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+/**
+ * Represents the response from the API when fetching a list of characters.
+ *
+ * @property items The list of characters.
+ * @property meta Metadata about the response.
+ */
+data class CharacterResponse(val items: List<Character>, val meta: Meta)
+
+/**
+ * Represents the response from the API when fetching a list of planets.
+ *
+ * @property items The list of planets.
+ * @property meta Metadata about the response.
+ */
+data class PlanetResponse(val items: List<Planet>, val meta: Meta)
+
+/**
+ * Represents the metadata of a response from the API.
+ *
+ * @property totalItems The total number of items available.
+ * @property itemCount The number of items in the current response.
+ * @property itemsPerPage The number of items per page.
+ * @property totalPages The total number of pages.
+ * @property currentPage The current page number.
+ */
+data class Meta(val totalItems: Int, val itemCount: Int, val itemsPerPage: Int, val totalPages: Int, val currentPage: Int)
+
+/**
+ * Represents a character.
+ *
+ * @property id The unique ID of the character.
+ * @property name The name of the character.
+ * @property ki The ki of the character.
+ * @property maxKi The maximum ki of the character.
+ * @property race The race of the character.
+ * @property gender The gender of the character.
+ * @property description A description of the character.
+ * @property image The URL of the character's image.
+ * @property affiliation The affiliation of the character.
+ * @property originPlanet The character's planet of origin.
+ * @property transformations A list of the character's transformations.
+ * @property isFavorite Whether the character is a favorite.
+ */
+@Entity(tableName = "characters")
+data class Character(
+    @PrimaryKey val id: Int,
+    val name: String, val ki: String, val maxKi: String, val race: String,
+    val gender: String, val description: String, val image: String, val affiliation: String,
+    val originPlanet: Planet? = null,
+    val transformations: List<Transformation>? = emptyList(),
+    val isFavorite: Boolean = false
+)
+
+/**
+ * Represents a transformation of a character.
+ *
+ * @property id The unique ID of the transformation.
+ * @property name The name of the transformation.
+ * @property image The URL of the transformation's image.
+ * @property ki The ki of the transformation.
+ */
+data class Transformation(val id: Int, val name: String, val image: String, val ki: String)
+
+/**
+ * Represents a planet.
+ *
+ * @property id The unique ID of the planet.
+ * @property name The name of the planet.
+ * @property isDestroyed Whether the planet has been destroyed.
+ * @property description A description of the planet.
+ * @property image The URL of the planet's image.
+ * @property isFavorite Whether the planet is a favorite.
+ */
+@Entity(tableName = "planets")
+data class Planet(
+    @PrimaryKey val id: Int,
+    val name: String, val isDestroyed: Boolean, val description: String, val image: String,
+    val isFavorite: Boolean = false
+)
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\Data\Model\Model.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\Data\Remote\DragonBallApi.kt ---
+package com.mariogarluu.dragonballapi.data.remote
+
+import com.mariogarluu.dragonballapi.data.model.Character
+import com.mariogarluu.dragonballapi.data.model.CharacterResponse
+import com.mariogarluu.dragonballapi.data.model.Planet
+import com.mariogarluu.dragonballapi.data.model.PlanetResponse
+import retrofit2.http.GET
+import retrofit2.http.Path
+import retrofit2.http.Query
+
+/**
+ * Defines the remote API for fetching Dragon Ball data.
+ */
+interface DragonBallApi {
+    /**
+     * Gets a list of characters from the API.
+     *
+     * @param limit The maximum number of characters to return.
+     * @return A [CharacterResponse] containing the list of characters.
+     */
+    @GET("characters")
+    suspend fun getCharacters(@Query("limit") limit: Int): CharacterResponse
+
+    /**
+     * Gets a single character by its ID from the API.
+     *
+     * @param id The ID of the character to get.
+     * @return The [Character] object.
+     */
+    @GET("characters/{id}")
+    suspend fun getCharacterById(@Path("id") id: Int): Character
+
+    /**
+     * Gets a list of planets from the API.
+     *
+     * @param limit The maximum number of planets to return.
+     * @return A [PlanetResponse] containing the list of planets.
+     */
+    @GET("planets")
+    suspend fun getPlanets(@Query("limit") limit: Int): PlanetResponse
+
+    /**
+     * Gets a single planet by its ID from the API.
+     *
+     * @param id The ID of the planet to get.
+     * @return The [Planet] object.
+     */
+    @GET("planets/{id}")
+    suspend fun getPlanetById(@Path("id") id: Int): Planet
+}
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\Data\Remote\DragonBallApi.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\Data\Repo\DragonBallRepository.kt ---
+package com.mariogarluu.dragonballapi.data.repo
+
+import androidx.room.withTransaction
+import com.mariogarluu.dragonballapi.data.local.CharacterDao
+import com.mariogarluu.dragonballapi.data.local.DragonBallDatabase
+import com.mariogarluu.dragonballapi.data.local.PlanetDao
+import com.mariogarluu.dragonballapi.data.model.Character
+import com.mariogarluu.dragonballapi.data.model.Planet
+import com.mariogarluu.dragonballapi.data.remote.DragonBallApi
+import com.mariogarluu.dragonballapi.data.toDomain
+import com.mariogarluu.dragonballapi.data.toEntity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
+import javax.inject.Inject
+
+/**
+ * Repository for fetching Dragon Ball data from the network and storing it in the local database.
+ *
+ * @property api The remote API service.
+ * @property db The local database.
+ * @property characterDao The DAO for characters.
+ * @property planetDao The DAO for planets.
+ */
+class DragonBallRepository @Inject constructor(
+    private val api: DragonBallApi,
+    private val db: DragonBallDatabase,
+    private val characterDao: CharacterDao,
+    private val planetDao: PlanetDao
+) {
+    // Personajes
+
+    /**
+     * Gets a flow of all characters from the local database.
+     * The data is mapped to domain models.
+     */
+    fun getCharacters() = characterDao.getAllCharactersWithRelations().map { list -> list.map { it.toDomain() } }.flowOn(Dispatchers.IO)
+
+    /**
+     * Refreshes the characters from the remote API and stores them in the local database.
+     */
+    suspend fun refreshCharacters() = withContext(Dispatchers.IO) {
+        runCatching {
+            val res = api.getCharacters(100)
+            val chars = res.items
+            val planets = chars.mapNotNull { it.originPlanet }
+            val trans = chars.flatMap { c -> c.transformations?.map { it.toEntity(c.id) }.orEmpty() }
+            db.withTransaction {
+                if (planets.isNotEmpty()) planetDao.insertAll(planets.map { it.toEntity() })
+                characterDao.insertCharacters(chars.map { it.toEntity() })
+                if (trans.isNotEmpty()) characterDao.insertTransformations(trans)
+            }
+        }
+    }
+
+    /**
+     * Gets a flow of a single character by its ID from the local database.
+     * The data is mapped to a domain model.
+     *
+     * @param id The ID of the character to get.
+     */
+    fun getCharacterById(id: Int) = characterDao.getCharacterWithRelationsById(id).map { it?.toDomain() }.flowOn(Dispatchers.IO)
+
+    /**
+     * Refreshes a single character by its ID from the remote API and stores it in the local database.
+     *
+     * @param id The ID of the character to refresh.
+     */
+    suspend fun refreshCharacterById(id: Int) = withContext(Dispatchers.IO) {
+        runCatching {
+            val c = api.getCharacterById(id)
+            db.withTransaction {
+                c.originPlanet?.let { planetDao.insertAll(listOf(it.toEntity())) }
+                characterDao.insertCharacters(listOf(c.toEntity()))
+                val t = c.transformations?.map { it.toEntity(c.id) }.orEmpty()
+                if (t.isNotEmpty()) characterDao.insertTransformations(t)
+            }
+        }
+    }
+
+    /**
+     * Toggles the favorite status of a character.
+     *
+     * @param id The ID of the character.
+     * @param isFav The new favorite status.
+     */
+    suspend fun toggleFavorite(id: Int, isFav: Boolean) = withContext(Dispatchers.IO) { characterDao.updateFavoriteStatus(id, isFav) }
+
+    /**
+     * Deletes a character by its ID from the local database.
+     *
+     * @param id The ID of the character to delete.
+     */
+    suspend fun deleteCharacter(id: Int) = withContext(Dispatchers.IO) { characterDao.deleteCharacterById(id) }
+
+    /**
+     * Adds a local character to the database.
+     *
+     * @param c The character to add.
+     */
+    suspend fun addLocalCharacter(c: Character) = withContext(Dispatchers.IO) { characterDao.insertCharacter(c.toEntity()) }
+
+    // Planetas
+
+    /**
+     * Gets a flow of all planets from the local database.
+     * The data is mapped to domain models.
+     */
+    fun getPlanets() = planetDao.getAllPlanets().map { list -> list.map { it.toDomain() } }.flowOn(Dispatchers.IO)
+
+    /**
+     * Refreshes the planets from the remote API and stores them in the local database.
+     */
+    suspend fun refreshPlanets() = withContext(Dispatchers.IO) {
+        runCatching {
+            val res = api.getPlanets(100)
+            planetDao.insertAll(res.items.map { it.toEntity() })
+        }
+    }
+
+    /**
+     * Gets a flow of a single planet by its ID from the local database.
+     * The data is mapped to a domain model.
+     *
+     * @param id The ID of the planet to get.
+     */
+    fun getPlanetById(id: Int) = planetDao.getPlanetById(id).map { it?.toDomain() }.flowOn(Dispatchers.IO)
+
+    /**
+     * Refreshes a single planet by its ID from the remote API and stores it in the local database.
+     *
+     * @param id The ID of the planet to refresh.
+     */
+    suspend fun refreshPlanetById(id: Int) = withContext(Dispatchers.IO) {
+        runCatching {
+            val p = api.getPlanetById(id)
+            planetDao.insertAll(listOf(p.toEntity()))
+        }
+    }
+
+    /**
+     * Toggles the favorite status of a planet.
+     *
+     * @param id The ID of the planet.
+     * @param isFav The new favorite status.
+     */
+    suspend fun togglePlanetFavorite(id: Int, isFav: Boolean) = withContext(Dispatchers.IO) { planetDao.updateFavoriteStatus(id, isFav) }
+
+    /**
+     * Deletes a planet by its ID from the local database.
+     *
+     * @param id The ID of the planet to delete.
+     */
+    suspend fun deletePlanet(id: Int) = withContext(Dispatchers.IO) { planetDao.deletePlanetById(id) }
+
+    /**
+     * Adds a local planet to the database.
+     *
+     * @param p The planet to add.
+     */
+    suspend fun addLocalPlanet(p: Planet) = withContext(Dispatchers.IO) { planetDao.insertPlanet(p.toEntity()) }
+}
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\Data\Repo\DragonBallRepository.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\di\DatabaseModule.kt ---
+package com.mariogarluu.dragonballapi.di
+
+import android.content.Context
+import androidx.room.Room
+import com.mariogarluu.dragonballapi.Data.Local.CharacterDao
+import com.mariogarluu.dragonballapi.Data.Local.DragonBallDatabase
+import com.mariogarluu.dragonballapi.Data.Local.PlanetDao
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+object DatabaseModule {
+
+    @Provides
+    @Singleton
+    fun provideDatabase(@ApplicationContext context: Context): DragonBallDatabase {
+        return Room.databaseBuilder(
+            context,
+            DragonBallDatabase::class.java,
+            "dragonball_database"
+        )
+        .fallbackToDestructiveMigration() // Importante para evitar crashes si cambias versiones
+        .build()
+    }
+
+    @Provides
+    fun provideCharacterDao(database: DragonBallDatabase): CharacterDao {
+        return database.characterDao()
+    }
+
+    @Provides
+    fun providePlanetDao(database: DragonBallDatabase): PlanetDao {
+        return database.planetDao()
+    }
+}
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\di\DatabaseModule.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\di\RemoteModule.kt ---
+package com.mariogarluu.dragonballapi.di
+
+import com.mariogarluu.dragonballapi.Data.Remote.DragonBallApi
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+object RemoteModule {
+
+    private const val BASE_URL = "https://dragonball-api.com/api/"
+
+    @Provides
+    @Singleton
+    fun provideRetrofit(): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideDragonBallApi(retrofit: Retrofit): DragonBallApi {
+        return retrofit.create(DragonBallApi::class.java)
+    }
+}
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\di\RemoteModule.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\DragonBallApiApp.kt ---
+package com.mariogarluu.dragonballapi
+
+import android.app.Application
+import dagger.hilt.android.HiltAndroidApp
+
+@HiltAndroidApp
+class DragonBallApiApp : Application()
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\DragonBallApiApp.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\MainActivity.kt ---
+package com.mariogarluu.dragonballapi
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Scaffold
+import androidx.compose.ui.Modifier
+import androidx.navigation.compose.rememberNavController
+import com.mariogarluu.dragonballapi.ui.navigation.NavGraph
+import com.mariogarluu.dragonballapi.ui.theme.DragonBallApiTheme
+import dagger.hilt.android.AndroidEntryPoint
+
+/**
+ * The main activity of the application.
+ * This activity is the entry point of the application and hosts the NavGraph.
+ */
+@AndroidEntryPoint
+class MainActivity : ComponentActivity() {
+    /**
+     * Called when the activity is first created.
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     *     previously being shut down then this Bundle contains the data it most
+     *     recently supplied in [onSaveInstanceState].  <b><i>Note: Otherwise it is null.</i></b>
+     */
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            DragonBallApiTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    val navController = rememberNavController()
+                    Scaffold(modifier = Modifier.fillMaxSize()) { paddingValues ->
+                        NavGraph(
+                            navController = navController,
+                            contentPadding = paddingValues
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\MainActivity.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\common\AppTopBar.kt ---
+package com.mariogarluu.dragonballapi.ui.common
+
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.vector.ImageVector
+
+/**
+ * A reusable top app bar for the application.
+ *
+ * @param title The title to be displayed in the top app bar.
+ * @param imageVector The image vector for the navigation icon. If null, no icon is displayed.
+ * @param onClick The callback to be invoked when the navigation icon is clicked.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AppTopBar(
+    title: String,
+    imageVector: ImageVector? = null,
+    onClick: (() -> Unit)? = null
+) {
+    TopAppBar(
+        title = { Text(text = title) },
+        navigationIcon = {
+            if (imageVector != null && onClick != null) {
+                IconButton(onClick = onClick) {
+                    Icon(imageVector = imageVector, contentDescription = "Back")
+                }
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            titleContentColor = MaterialTheme.colorScheme.onPrimary,
+            navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+            actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+        )
+    )
+}
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\common\AppTopBar.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\detail\DragonBallDetailScreen.kt ---
+package com.mariogarluu.dragonballapi.ui.detail
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.mariogarluu.dragonballapi.ui.CharacterDetailUiState
+import com.mariogarluu.dragonballapi.ui.common.AppTopBar
+
+/**
+ * Composable that displays the detail screen for a character.
+ *
+ * @param onBack The callback to be invoked when the back button is clicked.
+ * @param viewModel The view model for this screen.
+ */
+@Composable
+fun DragonBallDetailScreen(
+    onBack: () -> Unit,
+    viewModel: DragonBallDetailViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                title = "Detalle del Personaje",
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                onClick = onBack
+            )
+        },
+        floatingActionButton = {
+            if (uiState is CharacterDetailUiState.Success) {
+                val character = (uiState as CharacterDetailUiState.Success).character
+                FloatingActionButton(onClick = { viewModel.toggleFavorite(character) }) {
+                    Icon(
+                        imageVector = if (character.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = "Favorite",
+                        tint = if (character.isFavorite) Color.Red else MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+            }
+        }
+    ) { padding ->
+        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
+            when (val state = uiState) {
+                is CharacterDetailUiState.Loading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+                is CharacterDetailUiState.Error -> {
+                    Text(text = state.message, modifier = Modifier.align(Alignment.Center))
+                }
+                is CharacterDetailUiState.Success -> {
+                    val char = state.character
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .padding(16.dp)
+                    ) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current).data(char.image).crossfade(true).build(),
+                            contentDescription = char.name,
+                            modifier = Modifier.fillMaxWidth().height(300.dp),
+                            contentScale = ContentScale.Fit
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(text = char.name, style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+                        Text(text = char.race + " - " + char.gender, style = MaterialTheme.typography.titleMedium, color = Color.Gray)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = char.description, style = MaterialTheme.typography.bodyLarge)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                            InfoChip(label = "Ki", value = char.ki)
+                            InfoChip(label = "Max Ki", value = char.maxKi)
+                        }
+                        if (char.originPlanet != null) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(text = "Planeta de Origen", style = MaterialTheme.typography.titleLarge)
+                            Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
+                                    AsyncImage(model = char.originPlanet.image, contentDescription = null, modifier = Modifier.size(60.dp).clip(CircleShape), contentScale = ContentScale.Crop)
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Column {
+                                        Text(text = char.originPlanet.name, fontWeight = FontWeight.Bold)
+                                        Text(text = if(char.originPlanet.isDestroyed) "Destruido" else "Activo", color = if(char.originPlanet.isDestroyed) Color.Red else Color.Green)
+                                    }
+                                }
+                            }
+                        }
+                        if (!char.transformations.isNullOrEmpty()) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(text = "Transformaciones", style = MaterialTheme.typography.titleLarge)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                items(char.transformations) { trans ->
+                                    Card(modifier = Modifier.width(160.dp)) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            AsyncImage(model = trans.image, contentDescription = trans.name, modifier = Modifier.height(180.dp).fillMaxWidth(), contentScale = ContentScale.Crop)
+                                            Text(text = trans.name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(8.dp), fontWeight = FontWeight.Bold)
+                                            Text(text = "Ki: ${trans.ki}", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(bottom = 8.dp))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(80.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * A composable that displays a label and a value.
+ * This is used to display information about the character.
+ *
+ * @param label The label to display.
+ * @param value The value to display.
+ */
+@Composable
+fun InfoChip(label: String, value: String) {
+    Column {
+        Text(text = label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+        Text(text = value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+    }
+}
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\detail\DragonBallDetailScreen.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\detail\DragonBallDetailViewModel.kt ---
+package com.mariogarluu.dragonballapi.ui.detail
+
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.mariogarluu.dragonballapi.data.model.Character
+import com.mariogarluu.dragonballapi.data.repo.DragonBallRepository
+import com.mariogarluu.dragonballapi.ui.CharacterDetailUiState
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+/**
+ * ViewModel for the character detail screen.
+ *
+ * @property repository The repository for fetching character data.
+ * @param savedStateHandle Handle to the saved state of the view.
+ */
+@HiltViewModel
+class DragonBallDetailViewModel @Inject constructor(
+    private val repository: DragonBallRepository,
+    savedStateHandle: SavedStateHandle
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow<CharacterDetailUiState>(CharacterDetailUiState.Loading)
+    /**
+     * The UI state for the character detail screen.
+     */
+    val uiState: StateFlow<CharacterDetailUiState> = _uiState.asStateFlow()
+
+    private val characterId: Int = checkNotNull(savedStateHandle["characterId"])
+
+    init {
+        loadCharacter()
+    }
+
+    /**
+     * Loads the character from the repository and updates the UI state.
+     */
+    private fun loadCharacter() {
+        viewModelScope.launch {
+            repository.refreshCharacterById(characterId)
+            repository.getCharacterById(characterId).collect { character ->
+                if (character != null) {
+                    _uiState.value = CharacterDetailUiState.Success(character)
+                } else {
+                    _uiState.value = CharacterDetailUiState.Error("Personaje no encontrado")
+                }
+            }
+        }
+    }
+
+    /**
+     * Toggles the favorite status of a character.
+     *
+     * @param character The character to toggle the favorite status for.
+     */
+    fun toggleFavorite(character: Character) {
+        viewModelScope.launch {
+            repository.toggleFavorite(character.id, !character.isFavorite)
+        }
+    }
+}
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\detail\DragonBallDetailViewModel.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\home\HomeScreen.kt ---
+package com.mariogarluu.dragonballapi.ui.home
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+
+/**
+ * Composable that displays the home screen of the application.
+ * It contains buttons to navigate to the character list and the planet list.
+ *
+ * @param onCharactersClick The callback to be invoked when the characters button is clicked.
+ * @param onPlanetsClick The callback to be invoked when the planets button is clicked.
+ */
+@Composable
+fun HomeScreen(
+    onCharactersClick: () -> Unit,
+    onPlanetsClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Button(onClick = onCharactersClick, modifier = Modifier.padding(16.dp)) {
+            Text(text = "Ver Personajes")
+        }
+        Button(onClick = onPlanetsClick, modifier = Modifier.padding(16.dp)) {
+            Text(text = "Ver Planetas")
+        }
+    }
+}
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\home\HomeScreen.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\list\DragonBallListScreen.kt ---
+package com.mariogarluu.dragonballapi.ui.list
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.mariogarluu.dragonballapi.data.model.Character
+import com.mariogarluu.dragonballapi.ui.CharactersUiState
+import com.mariogarluu.dragonballapi.ui.common.AppTopBar
+
+/**
+ * Composable that displays the list of characters.
+ *
+ * @param onCharacterClick Called when a character is clicked.
+ * @param onUpClick Called when the up button is clicked.
+ * @param viewModel The view model for this screen.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DragonBallListScreen(
+    onCharacterClick: (Int) -> Unit,
+    onUpClick: () -> Unit,
+    viewModel: DragonBallListViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    var showAddDialog by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var isFilterActive by remember { mutableStateOf(false) }
+
+    Scaffold(
+        topBar = {
+            Column {
+                AppTopBar(
+                    title = "Personajes",
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    onClick = onUpClick
+                )
+                SearchBar(
+                    query = searchQuery,
+                    onQueryChange = {
+                        searchQuery = it
+                        viewModel.onSearchQueryChanged(it)
+                    },
+                    isFilterActive = isFilterActive,
+                    onFilterClick = {
+                        isFilterActive = !isFilterActive
+                        viewModel.toggleFavoriteFilter()
+                    }
+                )
+            }
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { showAddDialog = true }) {
+                Icon(Icons.Default.Add, contentDescription = "Añadir Personaje")
+            }
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            when (val state = uiState) {
+                is CharactersUiState.Loading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+                is CharactersUiState.Success -> {
+                    if (state.characters.isEmpty()) {
+                        Text(
+                            text = "No hay personajes",
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 80.dp)
+                        ) {
+                            items(
+                                items = state.characters,
+                                key = { it.id }
+                            ) { character ->
+                                SwipeToDeleteContainer(
+                                    onDelete = { viewModel.deleteCharacter(character.id) }
+                                ) {
+                                    CharacterItem(
+                                        character = character,
+                                        onCharacterClick = { onCharacterClick(character.id) },
+                                        onFavoriteClick = { viewModel.toggleCharacterFavorite(character) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                is CharactersUiState.Error -> {
+                    Text(
+                        text = state.message,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+            }
+
+            if (showAddDialog) {
+                AddCharacterDialog(
+                    onDismiss = { showAddDialog = false },
+                    onConfirm = { name, race, ki ->
+                        viewModel.addCustomCharacter(name, race, ki)
+                        showAddDialog = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Composable that displays a search bar with a filter button.
+ *
+ * @param query The current search query.
+ * @param onQueryChange Called when the search query changes.
+ * @param isFilterActive Whether the filter is active.
+ * @param onFilterClick Called when the filter button is clicked.
+ */
+@Composable
+fun SearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    isFilterActive: Boolean,
+    onFilterClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            label = { Text("Buscar por nombre") },
+            modifier = Modifier.weight(1f),
+            singleLine = true
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        IconButton(
+            onClick = onFilterClick,
+            colors = IconButtonDefaults.iconButtonColors(
+                containerColor = if (isFilterActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = if (isFilterActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        ) {
+            Icon(
+                imageVector = if (isFilterActive) Icons.Default.Favorite else Icons.Default.FilterList,
+                contentDescription = "Filtrar Favoritos"
+            )
+        }
+    }
+}
+
+/**
+ * Composable that provides a swipe-to-delete functionality.
+ *
+ * @param onDelete Called when the item is swiped to delete.
+ * @param content The content to be displayed.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SwipeToDeleteContainer(
+    onDelete: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = {
+            if (it == SwipeToDismissBoxValue.EndToStart) {
+                onDelete()
+                true
+            } else false
+        }
+    )
+
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            val color = Color.Red
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color)
+                    .padding(horizontal = 20.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Eliminar",
+                    tint = Color.White
+                )
+            }
+        },
+        content = { content() }
+    )
+}
+
+/**
+ * Composable that displays a single character item.
+ *
+ * @param character The character to display.
+ * @param onCharacterClick Called when the character is clicked.
+ * @param onFavoriteClick Called when the favorite button is clicked.
+ */
+@Composable
+fun CharacterItem(
+    character: Character,
+    onCharacterClick: () -> Unit,
+    onFavoriteClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable(onClick = onCharacterClick),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+        )
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(8.dp)
+        ) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(character.image)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = character.name,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.size(80.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = character.name, style = MaterialTheme.typography.titleMedium)
+                Text(text = character.race, style = MaterialTheme.typography.bodySmall)
+            }
+            IconButton(onClick = onFavoriteClick) {
+                Icon(
+                    imageVector = if (character.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = "Favorito",
+                    tint = if (character.isFavorite) Color.Red else MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Composable that displays a dialog to add a new character.
+ *
+ * @param onDismiss Called when the dialog is dismissed.
+ * @param onConfirm Called when the confirm button is clicked.
+ */
+@Composable
+fun AddCharacterDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String, String, String) -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+    var race by remember { mutableStateOf("") }
+    var ki by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Nuevo Personaje") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nombre") }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = race,
+                    onValueChange = { race = it },
+                    label = { Text("Raza") }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = ki,
+                    onValueChange = { ki = it },
+                    label = { Text("Ki") }
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(name, race, ki) },
+                enabled = name.isNotBlank() && race.isNotBlank()
+            ) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\list\DragonBallListScreen.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\list\DragonBallListViewModel.kt ---
+package com.mariogarluu.dragonballapi.ui.list
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.mariogarluu.dragonballapi.data.model.Character
+import com.mariogarluu.dragonballapi.data.repo.DragonBallRepository
+import com.mariogarluu.dragonballapi.ui.CharactersUiState
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class DragonBallListViewModel @Inject constructor(
+    private val repository: DragonBallRepository
+) : ViewModel() {
+
+    private val _searchQuery = MutableStateFlow("")
+    private val _isFavoriteFilterActive = MutableStateFlow(false)
+    private val _isLoading = MutableStateFlow(false)
+    private val _errorMessage = MutableStateFlow<String?>(null)
+
+    val uiState: StateFlow<CharactersUiState> = combine(
+        repository.getCharacters(),
+        _searchQuery,
+        _isFavoriteFilterActive,
+        _isLoading,
+        _errorMessage
+    ) { characters, query, onlyFavorites, isLoading, error ->
+        
+        val filteredList = characters.filter { character ->
+            val matchesName = character.name.contains(query, ignoreCase = true)
+            val matchesFavorite = if (onlyFavorites) character.isFavorite else true
+            matchesName && matchesFavorite
+        }
+
+        when {
+            isLoading && characters.isEmpty() -> CharactersUiState.Loading
+            error != null && characters.isEmpty() -> CharactersUiState.Error(error)
+            else -> CharactersUiState.Success(filteredList)
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = CharactersUiState.Loading
+    )
+
+    init {
+        refreshCharacters()
+    }
+
+    fun refreshCharacters() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            val result = repository.refreshCharacters()
+            if (result.isFailure) {
+                _errorMessage.value = result.exceptionOrNull()?.message ?: "Error desconocido"
+            }
+            _isLoading.value = false
+        }
+    }
+
+    // --- FUNCIONES CON NOMBRES LARGOS (COMO PIDE LA UI) ---
+
+    fun onSearchQueryChanged(query: String) {
+        _searchQuery.value = query
+    }
+
+    fun toggleFavoriteFilter() {
+        _isFavoriteFilterActive.value = !_isFavoriteFilterActive.value
+    }
+
+    fun toggleCharacterFavorite(character: Character) {
+        viewModelScope.launch {
+            repository.toggleFavorite(character.id, !character.isFavorite)
+        }
+    }
+
+    fun deleteCharacter(characterId: Int) {
+        viewModelScope.launch {
+            repository.deleteCharacter(characterId)
+        }
+    }
+
+    fun addCustomCharacter(name: String, race: String, ki: String) {
+        viewModelScope.launch {
+            // ID aleatorio local
+            val newId = (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
+            val newCharacter = Character(
+                id = newId,
+                name = name,
+                race = race,
+                ki = ki,
+                maxKi = "Desconocido",
+                gender = "Desconocido",
+                description = "Personaje creado localmente",
+                image = "https://dragonball-api.com/characters/goku_normal.png", // Placeholder
+                affiliation = "Custom",
+                originPlanet = null,
+                transformations = emptyList(),
+                isFavorite = false
+            )
+            repository.addLocalCharacter(newCharacter)
+        }
+    }
+}
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\list\DragonBallListViewModel.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\navigation\NavGraph.kt ---
+package com.mariogarluu.dragonballapi.ui.navigation
+
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
+import com.mariogarluu.dragonballapi.ui.detail.DragonBallDetailScreen
+import com.mariogarluu.dragonballapi.ui.home.HomeScreen
+import com.mariogarluu.dragonballapi.ui.list.DragonBallListScreen
+import com.mariogarluu.dragonballapi.ui.planets.detail.PlanetDetailScreen
+import com.mariogarluu.dragonballapi.ui.planets.list.PlanetListScreen
+
+/**
+ * Defines the navigation graph for the application.
+ *
+ * @param navController The navigation controller.
+ * @param contentPadding The padding for the content.
+ */
+@Composable
+fun NavGraph(
+    navController: NavHostController,
+    contentPadding: PaddingValues
+) {
+    NavHost(
+        navController = navController,
+        startDestination = Route.Home.route,
+        modifier = Modifier.padding(contentPadding)
+    ) {
+        // HOME
+        composable(Route.Home.route) {
+            HomeScreen(
+                onCharactersClick = { navController.navigate(Route.CharacterList.route) },
+                onPlanetsClick = { navController.navigate(Route.PlanetList.route) }
+            )
+        }
+
+        // LISTA PERSONAJES
+        composable(Route.CharacterList.route) {
+            DragonBallListScreen(
+                onCharacterClick = { id -> 
+                    navController.navigate(Route.CharacterDetail.createRoute(id)) 
+                },
+                onUpClick = { navController.popBackStack() }
+            )
+        }
+
+        // DETALLE PERSONAJE
+        composable(
+            route = Route.CharacterDetail.route,
+            arguments = listOf(navArgument("characterId") { type = NavType.IntType })
+        ) {
+            DragonBallDetailScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        // LISTA PLANETAS
+        composable(Route.PlanetList.route) {
+            PlanetListScreen(
+                onPlanetClick = { id -> 
+                    navController.navigate(Route.PlanetDetail.createRoute(id)) 
+                },
+                onUpClick = { navController.popBackStack() }
+            )
+        }
+
+        // DETALLE PLANETA
+        composable(
+            route = Route.PlanetDetail.route,
+            arguments = listOf(navArgument("planetId") { type = NavType.IntType })
+        ) {
+            PlanetDetailScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+    }
+}
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\navigation\NavGraph.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\navigation\Route.kt ---
+package com.mariogarluu.dragonballapi.ui.navigation
+
+/**
+ * Represents a route in the application's navigation graph.
+ *
+ * @property route The route string.
+ */
+sealed class Route(val route: String) {
+    /**
+     * The home screen route.
+     */
+    object Home : Route("home")
+
+    /**
+     * The character list screen route.
+     */
+    object CharacterList : Route("character_list")
+
+    /**
+     * The character detail screen route.
+     * This is a dynamic route that accepts a character ID.
+     */
+    object CharacterDetail : Route("character_detail/{characterId}") {
+        /**
+         * Creates the route for a specific character.
+         *
+         * @param characterId The ID of the character.
+         * @return The route string for the character detail screen.
+         */
+        fun createRoute(characterId: Int) = "character_detail/$characterId"
+    }
+
+    /**
+     * The planet list screen route.
+     */
+    object PlanetList : Route("planet_list")
+
+    /**
+     * The planet detail screen route.
+     * This is a dynamic route that accepts a planet ID.
+     */
+    object PlanetDetail : Route("planet_detail/{planetId}") {
+        /**
+         * Creates the route for a specific planet.
+         *
+         * @param planetId The ID of the planet.
+         * @return The route string for the planet detail screen.
+         */
+        fun createRoute(planetId: Int) = "planet_detail/$planetId"
+    }
+}
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\navigation\Route.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\planets\detail\PlanetDetailScreen.kt ---
+package com.mariogarluu.dragonballapi.ui.planets.detail
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.mariogarluu.dragonballapi.ui.PlanetDetailUiState
+import com.mariogarluu.dragonballapi.ui.common.AppTopBar
+
+/**
+ * Composable that displays the detail screen for a planet.
+ *
+ * @param onBack The callback to be invoked when the back button is clicked.
+ * @param viewModel The view model for this screen.
+ */
+@Composable
+fun PlanetDetailScreen(
+    onBack: () -> Unit,
+    viewModel: PlanetDetailViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                title = "Detalle Planeta",
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                onClick = onBack
+            )
+        },
+        floatingActionButton = {
+            if (uiState is PlanetDetailUiState.Success) {
+                val planet = (uiState as PlanetDetailUiState.Success).planet
+                FloatingActionButton(onClick = { viewModel.toggleFavorite(planet) }) {
+                    Icon(
+                        imageVector = if (planet.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = "Favorite",
+                        tint = if (planet.isFavorite) Color.Red else MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+            }
+        }
+    ) { padding ->
+        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
+            when (val state = uiState) {
+                is PlanetDetailUiState.Loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                is PlanetDetailUiState.Error -> Text(text = state.message, modifier = Modifier.align(Alignment.Center))
+                is PlanetDetailUiState.Success -> {
+                    val planet = state.planet
+                    Column(
+                        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                    ) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current).data(planet.image).crossfade(true).build(),
+                            contentDescription = planet.name,
+                            modifier = Modifier.fillMaxWidth().height(300.dp),
+                            contentScale = ContentScale.Crop
+                        )
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(text = planet.name, style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+                            val statusText = if (planet.isDestroyed) "Destruido" else "Activo"
+                            val statusColor = if (planet.isDestroyed) Color.Red else Color.Green
+                            Text(text = "Estado: $statusText", style = MaterialTheme.typography.titleMedium, color = statusColor)
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(text = planet.description, style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\planets\detail\PlanetDetailScreen.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\planets\detail\PlanetDetailViewModel.kt ---
+package com.mariogarluu.dragonballapi.ui.planets.detail
+
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.mariogarluu.dragonballapi.Data.Model.Planet
+import com.mariogarluu.dragonballapi.Data.Repo.DragonBallRepository
+import com.mariogarluu.dragonballapi.ui.PlanetDetailUiState
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+/**
+ * ViewModel for the planet detail screen.
+ *
+ * @property repository The repository for fetching planet data.
+ * @param savedStateHandle Handle to the saved state of the view.
+ */
+@HiltViewModel
+class PlanetDetailViewModel @Inject constructor(
+    private val repository: DragonBallRepository,
+    savedStateHandle: SavedStateHandle
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow<PlanetDetailUiState>(PlanetDetailUiState.Loading)
+    /**
+     * The UI state for the planet detail screen.
+     */
+    val uiState: StateFlow<PlanetDetailUiState> = _uiState.asStateFlow()
+
+    private val planetId: Int = checkNotNull(savedStateHandle["planetId"])
+
+    init {
+        loadPlanet()
+    }
+
+    /**
+     * Loads the planet from the repository and updates the UI state.
+     */
+    private fun loadPlanet() {
+        viewModelScope.launch {
+            repository.refreshPlanetById(planetId)
+            repository.getPlanetById(planetId).collect { planet ->
+                if (planet != null) {
+                    _uiState.value = PlanetDetailUiState.Success(planet)
+                } else {
+                    _uiState.value = PlanetDetailUiState.Error("Planeta no encontrado")
+                }
+            }
+        }
+    }
+
+    /**
+     * Toggles the favorite status of a planet.
+     *
+     * @param planet The planet to toggle the favorite status for.
+     */
+    fun toggleFavorite(planet: Planet) {
+        viewModelScope.launch {
+            repository.togglePlanetFavorite(planet.id, !planet.isFavorite)
+        }
+    }
+}
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\planets\detail\PlanetDetailViewModel.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\planets\list\PlanetListScreen.kt ---
+package com.mariogarluu.dragonballapi.ui.planets.list
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.mariogarluu.dragonballapi.data.model.Planet
+import com.mariogarluu.dragonballapi.ui.PlanetsUiState
+import com.mariogarluu.dragonballapi.ui.common.AppTopBar
+
+/**
+ * Composable that displays the list of planets.
+ *
+ * @param onPlanetClick Called when a planet is clicked.
+ * @param onUpClick Called when the up button is clicked.
+ * @param viewModel The view model for this screen.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PlanetListScreen(
+    onPlanetClick: (Int) -> Unit,
+    onUpClick: () -> Unit,
+    viewModel: PlanetListViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    var showAddDialog by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var isFilterActive by remember { mutableStateOf(false) }
+
+    Scaffold(
+        topBar = {
+            Column {
+                AppTopBar(
+                    title = "Planetas",
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    onClick = onUpClick
+                )
+                PlanetSearchBar(
+                    query = searchQuery,
+                    onQueryChange = {
+                        searchQuery = it
+                        viewModel.onSearchQueryChanged(it)
+                    },
+                    isFilterActive = isFilterActive,
+                    onFilterClick = {
+                        isFilterActive = !isFilterActive
+                        viewModel.toggleFavoriteFilter()
+                    }
+                )
+            }
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { showAddDialog = true }) {
+                Icon(Icons.Default.Add, contentDescription = "Añadir Planeta")
+            }
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            when (val state = uiState) {
+                is PlanetsUiState.Loading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+                is PlanetsUiState.Success -> {
+                    if (state.planets.isEmpty()) {
+                        Text("No hay planetas", modifier = Modifier.align(Alignment.Center))
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 80.dp)
+                        ) {
+                            items(items = state.planets, key = { it.id }) { planet ->
+                                PlanetSwipeToDeleteContainer(
+                                    onDelete = { viewModel.deletePlanet(planet.id) }
+                                ) {
+                                    PlanetItem(
+                                        planet = planet,
+                                        onPlanetClick = { onPlanetClick(planet.id) },
+                                        onFavoriteClick = { viewModel.togglePlanetFavorite(planet) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                is PlanetsUiState.Error -> {
+                    Text(text = state.message, modifier = Modifier.align(Alignment.Center))
+                }
+            }
+
+            if (showAddDialog) {
+                AddPlanetDialog(
+                    onDismiss = { showAddDialog = false },
+                    onConfirm = { name, desc, isDestroyed ->
+                        viewModel.addCustomPlanet(name, desc, isDestroyed)
+                        showAddDialog = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Composable that displays a search bar for planets.
+ *
+ * @param query The current search query.
+ * @param onQueryChange Called when the search query changes.
+ * @param isFilterActive Whether the filter is active.
+ * @param onFilterClick Called when the filter button is clicked.
+ */
+@Composable
+fun PlanetSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    isFilterActive: Boolean,
+    onFilterClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            label = { Text("Buscar planeta") },
+            modifier = Modifier.weight(1f),
+            singleLine = true
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        IconButton(
+            onClick = onFilterClick,
+            colors = IconButtonDefaults.iconButtonColors(
+                containerColor = if (isFilterActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = if (isFilterActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        ) {
+            Icon(
+                imageVector = if (isFilterActive) Icons.Default.Favorite else Icons.Default.FilterList,
+                contentDescription = "Filtrar Favoritos"
+            )
+        }
+    }
+}
+
+/**
+ * Composable that provides a swipe-to-delete functionality for planets.
+ *
+ * @param onDelete Called when the item is swiped to delete.
+ * @param content The content to be displayed.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PlanetSwipeToDeleteContainer(
+    onDelete: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = {
+            if (it == SwipeToDismissBoxValue.EndToStart) {
+                onDelete()
+                true
+            } else false
+        }
+    )
+
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            val color = Color.Red
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color)
+                    .padding(horizontal = 20.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Eliminar",
+                    tint = Color.White
+                )
+            }
+        },
+        content = { content() }
+    )
+}
+
+/**
+ * Composable that displays a single planet item.
+ *
+ * @param planet The planet to display.
+ * @param onPlanetClick Called when the planet is clicked.
+ * @param onFavoriteClick Called when the favorite button is clicked.
+ */
+@Composable
+fun PlanetItem(
+    planet: Planet,
+    onPlanetClick: () -> Unit,
+    onFavoriteClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable(onClick = onPlanetClick),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+        )
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(8.dp)
+        ) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(planet.image)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = planet.name,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.size(80.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = planet.name, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = if (planet.isDestroyed) "Destruido" else "Activo",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (planet.isDestroyed) Color.Red else Color.Green
+                )
+            }
+            IconButton(onClick = onFavoriteClick) {
+                Icon(
+                    imageVector = if (planet.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = "Favorito",
+                    tint = if (planet.isFavorite) Color.Red else MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Composable that displays a dialog to add a new planet.
+ *
+ * @param onDismiss Called when the dialog is dismissed.
+ * @param onConfirm Called when the confirm button is clicked.
+ */
+@Composable
+fun AddPlanetDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String, String, Boolean) -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var isDestroyed by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Nuevo Planeta") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nombre") }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Descripción") }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("¿Destruido?")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Switch(checked = isDestroyed, onCheckedChange = { isDestroyed = it })
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(name, description, isDestroyed) },
+                enabled = name.isNotBlank()
+            ) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
+        }
+    )
+}
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\planets\list\PlanetListScreen.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\planets\list\PlanetListViewModel.kt ---
+package com.mariogarluu.dragonballapi.ui.planets.list
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.mariogarluu.dragonballapi.data.model.Planet
+import com.mariogarluu.dragonballapi.data.repo.DragonBallRepository
+import com.mariogarluu.dragonballapi.ui.PlanetsUiState
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+/**
+ * ViewModel for the planet list screen.
+ *
+ * @property repository The repository for fetching planet data.
+ */
+@HiltViewModel
+class PlanetListViewModel @Inject constructor(
+    private val repository: DragonBallRepository
+) : ViewModel() {
+
+    private val _searchQuery = MutableStateFlow("")
+    private val _isFavoriteFilterActive = MutableStateFlow(false)
+    private val _isLoading = MutableStateFlow(false)
+
+    /**
+     * The UI state for the planet list screen.
+     */
+    val uiState: StateFlow<PlanetsUiState> = combine(
+        repository.getPlanets(),
+        _searchQuery,
+        _isFavoriteFilterActive,
+        _isLoading
+    ) { planets, query, onlyFavorites, isLoading ->
+        
+        val filteredList = planets.filter { planet ->
+            val matchesName = planet.name.contains(query, ignoreCase = true)
+            val matchesFavorite = if (onlyFavorites) planet.isFavorite else true
+            matchesName && matchesFavorite
+        }
+
+        if (isLoading && planets.isEmpty()) {
+            PlanetsUiState.Loading
+        } else {
+            PlanetsUiState.Success(filteredList)
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = PlanetsUiState.Loading
+    )
+
+    init {
+        refreshPlanets()
+    }
+
+    /**
+     * Refreshes the list of planets from the repository.
+     */
+    fun refreshPlanets() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            repository.refreshPlanets()
+            _isLoading.value = false
+        }
+    }
+
+    /**
+     * Called when the search query changes.
+     *
+     * @param query The new search query.
+     */
+    fun onSearchQueryChanged(query: String) {
+        _searchQuery.value = query
+    }
+
+    /**
+     * Toggles the favorite filter.
+     */
+    fun toggleFavoriteFilter() {
+        _isFavoriteFilterActive.value = !_isFavoriteFilterActive.value
+    }
+
+    /**
+     * Toggles the favorite status of a planet.
+     *
+     * @param planet The planet to toggle the favorite status for.
+     */
+    fun togglePlanetFavorite(planet: Planet) {
+        viewModelScope.launch {
+            repository.togglePlanetFavorite(planet.id, !planet.isFavorite)
+        }
+    }
+
+    /**
+     * Deletes a planet.
+     *
+     * @param planetId The ID of the planet to delete.
+     */
+    fun deletePlanet(planetId: Int) {
+        viewModelScope.launch {
+            repository.deletePlanet(planetId)
+        }
+    }
+
+    /**
+     * Adds a new custom planet.
+     *
+     * @param name The name of the planet.
+     * @param description A description of the planet.
+     * @param isDestroyed Whether the planet is destroyed.
+     */
+    fun addCustomPlanet(name: String, description: String, isDestroyed: Boolean) {
+        viewModelScope.launch {
+            val newId = (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
+            val newPlanet = Planet(
+                id = newId,
+                name = name,
+                isDestroyed = isDestroyed,
+                description = description,
+                image = "https://dragonball-api.com/planets/kaio.png", // Placeholder
+                isFavorite = false
+            )
+            repository.addLocalPlanet(newPlanet)
+        }
+    }
+}
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\planets\list\PlanetListViewModel.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\theme\Color.kt ---
+package com.mariogarluu.dragonballapi.ui.theme
+import androidx.compose.ui.graphics.Color
+
+val Purple80 = Color(0xFFD0BCFF)
+val PurpleGrey80 = Color(0xFFCCC2DC)
+val Pink80 = Color(0xFFEFB8C8)
+val Purple40 = Color(0xFF6650a4)
+val PurpleGrey40 = Color(0xFF625b71)
+val Pink40 = Color(0xFF7D5260)
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\theme\Color.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\theme\Theme.kt ---
+package com.mariogarluu.dragonballapi.ui.theme
+
+import android.app.Activity
+import android.os.Build
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+
+private val DarkColorScheme = darkColorScheme(
+    primary = Purple80,
+    secondary = PurpleGrey80,
+    tertiary = Pink80
+)
+
+private val LightColorScheme = lightColorScheme(
+    primary = Purple40,
+    secondary = PurpleGrey40,
+    tertiary = Pink40
+)
+
+@Composable
+fun DragonBallApiTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = true,
+    content: @Composable () -> Unit
+) {
+    val colorScheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            val context = LocalContext.current
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+        darkTheme -> DarkColorScheme
+        else -> LightColorScheme
+    }
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            window.statusBarColor = colorScheme.primary.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+        }
+    }
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = Typography,
+        content = content
+    )
+}
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\theme\Theme.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\theme\Type.kt ---
+package com.mariogarluu.dragonballapi.ui.theme
+import androidx.compose.material3.Typography
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+
+val Typography = Typography(
+    bodyLarge = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.5.sp
+    )
+)
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\theme\Type.kt ---
+
+--- START OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\UiState.kt ---
+package com.mariogarluu.dragonballapi.ui
+
+import com.mariogarluu.dragonballapi.data.model.Character
+import com.mariogarluu.dragonballapi.data.model.Planet
+
+// --- LISTAS ---
+
+/**
+ * Represents the state of the characters list screen.
+ */
+sealed class CharactersUiState {
+    /**
+     * The screen is in a loading state.
+     */
+    object Loading : CharactersUiState()
+
+    /**
+     * The characters were loaded successfully.
+     *
+     * @property characters The list of characters.
+     */
+    data class Success(val characters: List<Character>) : CharactersUiState()
+
+    /**
+     * An error occurred while loading the characters.
+     *
+     * @property message The error message.
+     */
+    data class Error(val message: String) : CharactersUiState()
+}
+
+/**
+ * Represents the state of the planets list screen.
+ */
+sealed class PlanetsUiState {
+    /**
+     * The screen is in a loading state.
+     */
+    object Loading : PlanetsUiState()
+
+    /**
+     * The planets were loaded successfully.
+     *
+     * @property planets The list of planets.
+     */
+    data class Success(val planets: List<Planet>) : PlanetsUiState()
+
+    /**
+     * An error occurred while loading the planets.
+     *
+     * @property message The error message.
+     */
+    data class Error(val message: String) : PlanetsUiState()
+}
+
+// --- DETALLES ---
+
+/**
+ * Represents the state of the character detail screen.
+ */
+sealed class CharacterDetailUiState {
+    /**
+     * The screen is in a loading state.
+     */
+    object Loading : CharacterDetailUiState()
+
+    /**
+     * The character was loaded successfully.
+     *
+     * @property character The character.
+     */
+    data class Success(val character: Character) : CharacterDetailUiState()
+
+    /**
+     * An error occurred while loading the character.
+     *
+     * @property message The error message.
+     */
+    data class Error(val message: String) : CharacterDetailUiState()
+}
+
+/**
+ * Represents the state of the planet detail screen.
+ */
+sealed class PlanetDetailUiState {
+    /**
+     * The screen is in a loading state.
+     */
+    object Loading : PlanetDetailUiState()
+
+    /**
+     * The planet was loaded successfully.
+     *
+     * @property planet The planet.
+     */
+    data class Success(val planet: Planet) : PlanetDetailUiState()
+
+    /**
+     * An error occurred while loading the planet.
+     *
+     * @property message The error message.
+     */
+    data class Error(val message: String) : PlanetDetailUiState()
+}
+--- END OF FILE: app\src\main\java\com\mariogarluu\dragonballapi\ui\UiState.kt ---
+
+--- START OF FILE: app\src\main\res\drawable\ic_launcher_background.xml ---
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#3DDC84"
+        android:pathData="M0,0h108v108h-108z" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M9,0L9,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M19,0L19,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M29,0L29,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M39,0L39,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M49,0L49,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M59,0L59,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M69,0L69,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M79,0L79,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M89,0L89,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M99,0L99,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,9L108,9"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,19L108,19"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,29L108,29"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,39L108,39"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,49L108,49"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,59L108,59"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,69L108,69"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,79L108,79"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,89L108,89"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,99L108,99"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M19,29L89,29"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M19,39L89,39"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M19,49L89,49"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M19,59L89,59"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M19,69L89,69"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M19,79L89,79"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M29,19L29,89"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M39,19L39,89"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M49,19L49,89"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M59,19L59,89"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M69,19L69,89"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M79,19L79,89"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+</vector>
+
+--- END OF FILE: app\src\main\res\drawable\ic_launcher_background.xml ---
+
+--- START OF FILE: app\src\main\res\drawable\ic_launcher_foreground.xml ---
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:pathData="M31,63.928c0,0 6.4,-11 12.1,-13.1c7.2,-2.6 26,-1.4 26,-1.4l38.1,38.1L107,108.928l-32,-1L31,63.928z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:endX="85.84757"
+                android:endY="92.4963"
+                android:startX="42.9492"
+                android:startY="49.59793"
+                android:type="linear">
+                <item
+                    android:color="#44000000"
+                    android:offset="0.0" />
+                <item
+                    android:color="#00000000"
+                    android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="nonZero"
+        android:pathData="M65.3,45.828l3.8,-6.6c0.2,-0.4 0.1,-0.9 -0.3,-1.1c-0.4,-0.2 -0.9,-0.1 -1.1,0.3l-3.9,6.7c-6.3,-2.8 -13.4,-2.8 -19.7,0l-3.9,-6.7c-0.2,-0.4 -0.7,-0.5 -1.1,-0.3C38.8,38.328 38.7,38.828 38.9,39.228l3.8,6.6C36.2,49.428 31.7,56.028 31,63.928h46C76.3,56.028 71.8,49.428 65.3,45.828zM43.4,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2c-0.3,-0.7 -0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C45.3,56.528 44.5,57.328 43.4,57.328L43.4,57.328zM64.6,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2s-0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C66.5,56.528 65.6,57.328 64.6,57.328L64.6,57.328z"
+        android:strokeWidth="1"
+        android:strokeColor="#00000000" />
+</vector>
+--- END OF FILE: app\src\main\res\drawable\ic_launcher_foreground.xml ---
+
+--- START OF FILE: app\src\main\res\mipmap-anydpi\ic_launcher.xml ---
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_launcher_background" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+    <monochrome android:drawable="@drawable/ic_launcher_foreground" />
+</adaptive-icon>
+--- END OF FILE: app\src\main\res\mipmap-anydpi\ic_launcher.xml ---
+
+--- START OF FILE: app\src\main\res\mipmap-anydpi\ic_launcher_round.xml ---
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_launcher_background" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+    <monochrome android:drawable="@drawable/ic_launcher_foreground" />
+</adaptive-icon>
+--- END OF FILE: app\src\main\res\mipmap-anydpi\ic_launcher_round.xml ---
+
+--- START OF FILE: app\src\main\res\values\colors.xml ---
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>
+--- END OF FILE: app\src\main\res\values\colors.xml ---
+
+--- START OF FILE: app\src\main\res\values\strings.xml ---
+<resources>
+    <string name="app_name">Dragonballapi</string>
+</resources>
+--- END OF FILE: app\src\main\res\values\strings.xml ---
+
+--- START OF FILE: app\src\main\res\values\themes.xml ---
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.Dragonballapi" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
+--- END OF FILE: app\src\main\res\values\themes.xml ---
+
+--- START OF FILE: app\src\main\res\xml\backup_rules.xml ---
+<?xml version="1.0" encoding="utf-8"?><!--
+   Sample backup rules file; uncomment and customize as necessary.
+   See https://developer.android.com/guide/topics/data/autobackup
+   for details.
+   Note: This file is ignored for devices older than API 31
+   See https://developer.android.com/about/versions/12/backup-restore
+-->
+<full-backup-content>
+    <!--
+   <include domain="sharedpref" path="."/>
+   <exclude domain="sharedpref" path="device.xml"/>
+-->
+</full-backup-content>
+--- END OF FILE: app\src\main\res\xml\backup_rules.xml ---
+
+--- START OF FILE: app\src\main\res\xml\data_extraction_rules.xml ---
+<?xml version="1.0" encoding="utf-8"?><!--
+   Sample data extraction rules file; uncomment and customize as necessary.
+   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
+   for details.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <!-- TODO: Use <include> and <exclude> to control what is backed up.
+        <include .../>
+        <exclude .../>
+        -->
+    </cloud-backup>
+    <!--
+    <device-transfer>
+        <include .../>
+        <exclude .../>
+    </device-transfer>
+    -->
+</data-extraction-rules>
+--- END OF FILE: app\src\main\res\xml\data_extraction_rules.xml ---
+
+--- START OF FILE: app\src\test\java\com\mariogarluu\dragonballapi\ExampleUnitTest.kt ---
+package com.mariogarluu.dragonballapi
+
+import org.junit.Test
+
+import org.junit.Assert.*
+
+/**
+ * Example local unit test, which will execute on the development machine (host).
+ *
+ * See [testing documentation](http://d.android.com/tools/testing).
+ */
+class ExampleUnitTest {
+    @Test
+    fun addition_isCorrect() {
+        assertEquals(4, 2 + 2)
+    }
+}
+--- END OF FILE: app\src\test\java\com\mariogarluu\dragonballapi\ExampleUnitTest.kt ---
+
+--- START OF FILE: build.gradle.kts ---
+// Build file raíz
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+plugins {
+    // Definimos las versiones AQUÍ para que los submódulos las encuentren
+    id("com.android.application") version "8.5.1" apply false
+    id("org.jetbrains.kotlin.android") version "2.0.0" apply false
+    id("org.jetbrains.kotlin.plugin.compose") version "2.0.0" apply false
+    id("com.google.devtools.ksp") version "2.0.0-1.0.21" apply false
+    id("com.google.dagger.hilt.android") version "2.51.1" apply false
+}
+--- END OF FILE: build.gradle.kts ---
+
+--- START OF FILE: gradle\wrapper\gradle-wrapper.properties ---
+#Fri Dec 12 12:35:01 CET 2025
+distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.13-bin.zip
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+
+--- END OF FILE: gradle\wrapper\gradle-wrapper.properties ---
+
+--- START OF FILE: gradle.properties ---
+# Project-wide Gradle settings.
+# IDE (e.g. Android Studio) users:
+# Gradle settings configured through the IDE *will override*
+# any settings specified in this file.
+# For more details on how to configure your build environment visit
+# http://www.gradle.org/docs/current/userguide/build_environment.html
+# Specifies the JVM arguments used for the daemon process.
+# The setting is particularly useful for tweaking memory settings.
+org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+# When configured, Gradle will run in incubating parallel mode.
+# This option should only be used with decoupled projects. For more details, visit
+# https://developer.android.com/r/tools/gradle-multi-project-decoupled-projects
+# org.gradle.parallel=true
+# AndroidX package structure to make it clearer which packages are bundled with the
+# Android operating system, and which are packaged with your app's APK
+# https://developer.android.com/topic/libraries/support-library/androidx-rn
+android.useAndroidX=true
+# Kotlin code style for this project: "official" or "obsolete":
+kotlin.code.style=official
+# Enables namespacing of each library's R class so that its R class includes only the
+# resources declared in the library itself and none from the library's dependencies,
+# thereby reducing the size of the R class for that library
+android.nonTransitiveRClass=true
+--- END OF FILE: gradle.properties ---
+
+--- START OF FILE: local.properties ---
+## This file is automatically generated by Android Studio.
+# Do not modify this file -- YOUR CHANGES WILL BE ERASED!
+#
+# This file should *NOT* be checked into Version Control Systems,
+# as it contains information specific to your local configuration.
+#
+# Location of the SDK. This is only used by Gradle.
+# For customization when using a Version Control System, please read the
+# header note.
+sdk.dir=C\:\\Users\\mario\\AppData\\Local\\Android\\Sdk
+--- END OF FILE: local.properties ---
+
+--- START OF FILE: settings.gradle.kts ---
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+rootProject.name = "DragonBallApi"
+include(":app")
+--- END OF FILE: settings.gradle.kts ---
+
