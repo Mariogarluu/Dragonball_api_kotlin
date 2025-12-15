@@ -1,20 +1,21 @@
 package com.mariogarluu.dragonballapi.ui.detail
 
-import androidx.compose.foundation.background
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,22 +24,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.mariogarluu.dragonballapi.ui.CharacterDetailUiState
 import com.mariogarluu.dragonballapi.ui.common.AppTopBar
 
-/**
- * Composable that displays the detail screen for a character.
- *
- * @param onBack The callback to be invoked when the back button is clicked.
- * @param viewModel The view model for this screen.
- */
 @Composable
 fun DragonBallDetailScreen(
     onBack: () -> Unit,
+    onPlanetClick: (Int) -> Unit,
     viewModel: DragonBallDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -64,7 +59,9 @@ fun DragonBallDetailScreen(
             }
         }
     ) { padding ->
-        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
+        Box(modifier = Modifier
+            .padding(padding)
+            .fillMaxSize()) {
             when (val state = uiState) {
                 is CharacterDetailUiState.Loading -> {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -83,7 +80,9 @@ fun DragonBallDetailScreen(
                         AsyncImage(
                             model = ImageRequest.Builder(LocalContext.current).data(char.image).crossfade(true).build(),
                             contentDescription = char.name,
-                            modifier = Modifier.fillMaxWidth().height(300.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(300.dp),
                             contentScale = ContentScale.Fit
                         )
                         Spacer(modifier = Modifier.height(16.dp))
@@ -96,32 +95,127 @@ fun DragonBallDetailScreen(
                             InfoChip(label = "Ki", value = char.ki)
                             InfoChip(label = "Max Ki", value = char.maxKi)
                         }
+
                         if (char.originPlanet != null) {
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(text = "Planeta de Origen", style = MaterialTheme.typography.titleLarge)
-                            Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                            Card(
+                                onClick = { onPlanetClick(char.originPlanet.id) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
                                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
-                                    AsyncImage(model = char.originPlanet.image, contentDescription = null, modifier = Modifier.size(60.dp).clip(CircleShape), contentScale = ContentScale.Crop)
+                                    AsyncImage(
+                                        model = char.originPlanet.image,
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .size(60.dp)
+                                            .clip(CircleShape),
+                                        contentScale = ContentScale.Crop
+                                    )
                                     Spacer(modifier = Modifier.width(16.dp))
                                     Column {
                                         Text(text = char.originPlanet.name, fontWeight = FontWeight.Bold)
-                                        Text(text = if(char.originPlanet.isDestroyed) "Destruido" else "Activo", color = if(char.originPlanet.isDestroyed) Color.Red else Color.Green)
+                                        Text(
+                                            text = if(char.originPlanet.isDestroyed) "Destruido" else "Activo",
+                                            color = if(char.originPlanet.isDestroyed) Color.Red else Color.Green
+                                        )
                                     }
                                 }
                             }
                         }
+
                         if (!char.transformations.isNullOrEmpty()) {
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(text = "Transformaciones", style = MaterialTheme.typography.titleLarge)
                             Spacer(modifier = Modifier.height(8.dp))
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                items(char.transformations) { trans ->
-                                    Card(modifier = Modifier.width(160.dp)) {
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            AsyncImage(model = trans.image, contentDescription = trans.name, modifier = Modifier.height(180.dp).fillMaxWidth(), contentScale = ContentScale.Crop)
-                                            Text(text = trans.name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(8.dp), fontWeight = FontWeight.Bold)
-                                            Text(text = "Ki: ${trans.ki}", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(bottom = 8.dp))
+
+                            var currentTransformationIndex by remember { mutableIntStateOf(0) }
+                            val transformations = char.transformations
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                IconButton(
+                                    onClick = { if (currentTransformationIndex > 0) currentTransformationIndex-- },
+                                    enabled = currentTransformationIndex > 0
+                                ) {
+                                    if (currentTransformationIndex > 0) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                            contentDescription = "Anterior",
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+
+                                Card(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(horizontal = 8.dp),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                                ) {
+                                    AnimatedContent(
+                                        targetState = transformations[currentTransformationIndex],
+                                        transitionSpec = {
+                                            fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
+                                        },
+                                        label = "TransformationAnimation"
+                                    ) { trans ->
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            AsyncImage(
+                                                model = trans.image,
+                                                contentDescription = trans.name,
+                                                modifier = Modifier
+                                                    .height(450.dp)
+                                                    .fillMaxWidth(),
+                                                contentScale = ContentScale.Fit
+                                            )
+
+                                            Column(
+                                                modifier = Modifier
+                                                    .padding(12.dp)
+                                                    .fillMaxWidth(),
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
+                                                Text(
+                                                    text = "Ki: ${trans.ki}",
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+
+                                                Spacer(modifier = Modifier.height(4.dp))
+
+                                                Text(
+                                                    text = trans.name,
+                                                    style = MaterialTheme.typography.headlineSmall,
+                                                    fontWeight = FontWeight.Black,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                            }
                                         }
+                                    }
+                                }
+
+                                IconButton(
+                                    onClick = { if (currentTransformationIndex < transformations.size - 1) currentTransformationIndex++ },
+                                    enabled = currentTransformationIndex < transformations.size - 1
+                                ) {
+                                    if (currentTransformationIndex < transformations.size - 1) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                            contentDescription = "Siguiente",
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
                                     }
                                 }
                             }
@@ -134,13 +228,6 @@ fun DragonBallDetailScreen(
     }
 }
 
-/**
- * A composable that displays a label and a value.
- * This is used to display information about the character.
- *
- * @param label The label to display.
- * @param value The value to display.
- */
 @Composable
 fun InfoChip(label: String, value: String) {
     Column {

@@ -15,12 +15,6 @@ import com.mariogarluu.dragonballapi.ui.list.DragonBallListScreen
 import com.mariogarluu.dragonballapi.ui.planets.detail.PlanetDetailScreen
 import com.mariogarluu.dragonballapi.ui.planets.list.PlanetListScreen
 
-/**
- * Defines the navigation graph for the application.
- *
- * @param navController The navigation controller.
- * @param contentPadding The padding for the content.
- */
 @Composable
 fun NavGraph(
     navController: NavHostController,
@@ -42,8 +36,8 @@ fun NavGraph(
         // LISTA PERSONAJES
         composable(Route.CharacterList.route) {
             DragonBallListScreen(
-                onCharacterClick = { id -> 
-                    navController.navigate(Route.CharacterDetail.createRoute(id)) 
+                onCharacterClick = { id ->
+                    navController.navigate(Route.CharacterDetail.createRoute(id))
                 },
                 onUpClick = { navController.popBackStack() }
             )
@@ -55,15 +49,18 @@ fun NavGraph(
             arguments = listOf(navArgument("characterId") { type = NavType.IntType })
         ) {
             DragonBallDetailScreen(
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onPlanetClick = { planetId ->
+                    navController.navigate(Route.PlanetDetail.createRoute(planetId))
+                }
             )
         }
 
         // LISTA PLANETAS
         composable(Route.PlanetList.route) {
             PlanetListScreen(
-                onPlanetClick = { id -> 
-                    navController.navigate(Route.PlanetDetail.createRoute(id)) 
+                onPlanetClick = { id ->
+                    navController.navigate(Route.PlanetDetail.createRoute(id))
                 },
                 onUpClick = { navController.popBackStack() }
             )
